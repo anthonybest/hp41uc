@@ -38,7 +38,7 @@ along with HP41UC.  If not, see <http://www.gnu.org/licenses/>.
 #ifdef __DJGPP__
 #include <io.h>
 #else
-#include <sys/io.h>
+//#include <sys/io.h>
 #include <wordexp.h>	/* wordexp() */
 #endif
 #include <unistd.h>	/* access() */
