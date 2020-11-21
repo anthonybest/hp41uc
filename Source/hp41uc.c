@@ -43,7 +43,7 @@ typedef enum {
 
 int main(int argc, char *argv[])
 {
-	int h, i, j, k;
+	int h, i, j = 0, k;
 	char in = 0, out = 0;
 	char *name = NULL;
 	char *infile = NULL, *outfile = NULL;
@@ -102,7 +102,7 @@ int main(int argc, char *argv[])
 		}
 		else if (_stricmp(argv[i], "-k") == HP41_OK ||
 			_stricmp(argv[i], "/k") == HP41_OK) {
-			raw_checksum = HP41_FALSE;
+			raw_checksum = HP41_TRUE;
 		}
 		else if (_strnicmp(argv[i], "-x", 2) == HP41_OK ||
 			_strnicmp(argv[i], "/x", 2) == HP41_OK) {
@@ -988,11 +988,11 @@ FILE *open_output(char *outpath)
 {
 	FILE *fout = NULL;
 
-	if (oktowrite(outpath)) {
+	//if (oktowrite(outpath)) {
 		if ((fout = fopen(outpath, "w+b")) == NULL) {
 			printf("Error opening output file[ %s ]\n", outpath);
 		}
-	}
+	//}
 
 	return(fout);
 }
@@ -1007,7 +1007,7 @@ void closefiles(FILE *fin, FILE *fout, long outlength, int header)
 			outlength = 0;
 			remove(outpath);
 		}
-		printf("%ld bytes written.\n", outlength);
+		printf("%d bytes written.\n", outlength);
 	}
 }
 
@@ -1535,6 +1535,7 @@ void help(int do_help)
 	switch (do_help) {
 	case 1:
 		printf("User-Code File Converter/Compiler/De-compiler/Barcode Generator - Version 3.00\n");
+		printf("+ DM41 Extensions.\n");
 		printf("Copyright (c) Leo Duran, 2000-2020. All rights reserved. leo.duran@yahoo.com.\n\n");
 		printf("Supported File Formats:\n");
 		printf("  LIF [ /l ]: transfer file for Trans41\n");

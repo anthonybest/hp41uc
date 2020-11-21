@@ -48,6 +48,11 @@ static unsigned char *line_argv[MAX_ARGS];
 static unsigned char line_buffer[MAX_LINE];
 static unsigned char code_buffer[MAX_CODE];
 
+static int produced = 0;
+static int last_global_lbl = 0;
+
+int compile_global_end(unsigned char *code);
+
 void compile_init(void)
 {
 	fnumeric = HP41_FALSE;
@@ -62,6 +67,65 @@ void compile_init(void)
 	state = COMPILE_SEEK_START_LINE;
 }
 
+
+
+void dump_dm41(unsigned char *code, int code_size) {
+
+#if 0 // OLD STYLE
+	int a,b;
+	int const top_addr = 0x19c;
+	int last_addr = top_addr-code_size/7;
+	int addr = last_addr & 0xfffc;
+	int ix = (top_addr - addr)*7; // number of bytes to dump
+
+	printf("===\n");
+	printf("DM41\n");
+	printf("08  4b000000000000  00000000000000  00000000000000  00000000000000\n");
+	printf("0c  1000000000019c  1a700169%03x%03x  0000002c048000  00000000000000\n", top_addr, last_addr);
+
+	// Dump code
+	while( addr < top_addr) {
+		printf("%03x", addr);
+		for(b = 0; b < 4; b++) {
+			printf("  ");
+			for(a = 0; a < 7; a++) {
+				int x = ix-7+a;
+				int val = x < code_size ? code[x] : 0;
+				printf("%02x",val);
+			}
+			ix-=7;
+			addr++;
+		}
+		printf("\n");
+	}
+	printf("A: 00000000c00020  B: 0000002c0480fd  C: 0000002c0480fd\n");
+	printf("M: 00011cd5ff73cb  N: 000000000000c0  G: 00\n");
+#else
+	// New address independent dump
+	int a;
+	int ix = 0;
+	printf("===\n");
+
+	// Dump code
+	while( ix < code_size ) {
+		for(a = 0; a < 7; a++) {
+			int x = ix+a;
+			int val = x < code_size ? code[x] : 0;
+			printf("%02x",val);
+		}
+		ix+=7;
+		printf("\n");
+	}
+
+#endif
+	printf("===\n");
+}
+
+
+
+//#define NEXT_INP (*inp ? *inp++ : 0) ; printf(".......................... at %i:%c: stat=%i\n",(int)(inp-*pin_buffer), c, state)
+#define NEXT_INP *inp++
+
 int compile(unsigned char *out_buffer, int out_size,
 	unsigned char **pin_buffer, int *pin_count,
 	COMPILE_FLAG *pflag, int *ppending, int *pend_count)
@@ -69,10 +133,9 @@ int compile(unsigned char *out_buffer, int out_size,
 	COMPILE_FLAG flag;
 	int done = HP41_FALSE;
 	int consumed = 0;
-	int produced = 0;
 	unsigned char c, *inp, *outp;
 	int line_argc;
-
+	printf("Compiling: %i chars\n", *pin_count);
 	flag = *pflag;
 	if (flag == COMPILE_FLAG_RESTART ||
 		flag == COMPILE_FLAG_RESTART_EOF) {
@@ -92,7 +155,7 @@ int compile(unsigned char *out_buffer, int out_size,
 	do {
 		switch (state) {
 		case COMPILE_SEEK_START_LINE:
-			c = *inp++;
+			c = NEXT_INP;
 			++consumed;
 			if (c == '\n' || c == '\f' || c == 0x1A) {
 				++source_line;
@@ -104,9 +167,9 @@ int compile(unsigned char *out_buffer, int out_size,
 			break;
 
 		case COMPILE_GET_LINE:
-			c = *inp++;
+			c = NEXT_INP;
 			++consumed;
-			if (c == '\n' || c == '\f' || c == 0x1A) {
+			if (c == '\n' || c == '\f' || c == 0x1A || c == 0) {
 				line_end = HP41_TRUE;
 			}
 			else if (c == '\r') {
@@ -125,9 +188,9 @@ int compile(unsigned char *out_buffer, int out_size,
 			break;
 
 		case COMPILE_SEEK_END_LINE:
-			c = *inp++;
+			c = NEXT_INP;
 			++consumed;
-			if (c == '\n' || c == '\f' || c == 0x1A) {
+			if (c == '\n' || c == '\f' || c == 0x1A || c == 0) {
 				line_end = HP41_TRUE;
 			}
 			else if (c != '\r') {
@@ -163,8 +226,7 @@ int compile(unsigned char *out_buffer, int out_size,
 				}
 				else {
 					/* compile next instruction */
-					code_count = compile_args(code_buffer,
-						line_argc, line_argv);
+					code_count = compile_args(code_buffer, line_argc, line_argv, (char*)line_ptr);
 				}
 
 				/* any errors? */
@@ -184,10 +246,10 @@ int compile(unsigned char *out_buffer, int out_size,
 			break;
 
 		case COMPILE_IGNORE_BAD_LINE:
-			c = *inp++;
+			c = NEXT_INP;
 			++consumed;
 			/* end-of-line? */
-			if (c == '\n' || c == '\f' || c == 0x1A) {
+			if (c == '\n' || c == '\f' || c == 0x1A || c == 0 ) {
 				state = COMPILE_SEEK_START_LINE;
 			}
 			break;
@@ -215,7 +277,12 @@ int compile(unsigned char *out_buffer, int out_size,
 
 		/* exhausted buffers? */
 		if (produced == out_size ||
-			(consumed == *pin_count && state != COMPILE_LINE_OUTPUT)) {
+			(consumed == *pin_count && state != COMPILE_LINE_OUTPUT)) 
+		{
+			printf("End at %i\n", produced);
+			compile_global_end(out_buffer);
+			dump_dm41(out_buffer, produced);
+			flag = COMPILE_FLAG_END;
 			done = HP41_TRUE;
 		}
 
@@ -335,7 +402,7 @@ int get_numeric_prefix(unsigned char *numeric, unsigned char *buffer)
 
 int get_text_prefix(unsigned char *text, unsigned char *buffer, int *pcount)
 {
-	int i, j, k;
+	int i, j = 0, k;
 	int istext = HP41_TRUE;
 	int error = HP41_ERROR;
 	unsigned char lbuffer[MAX_LINE];
@@ -438,7 +505,8 @@ int compile_text(unsigned char *code, unsigned char *text, int count)
 	return(count + 1);
 }
 
-int compile_alpha(unsigned char *code, unsigned char *prefix, unsigned char *alpha)
+
+int compile_alpha(unsigned char *code, unsigned char *prefix, unsigned char *alpha, int asn)
 {
 	int local, count, codes;
 	unsigned char lbuffer[MAX_LINE];
@@ -458,12 +526,7 @@ int compile_alpha(unsigned char *code, unsigned char *prefix, unsigned char *alp
 			return(0);
 		}
 		else if (force_global || !local) {
-			code[0] = 0xC0;
-			code[1] = 0x00;
-			code[2] = 0xF1 + count;
-			code[3] = 0x00;
-			if (count)
-				memcpy(&code[4], alpha, count);
+			compile_label(code, prefix, alpha, asn);
 
 			/* set LABEL flag */
 			global_label = HP41_TRUE;
@@ -593,8 +656,8 @@ int compile_arg1(unsigned char *code, unsigned char *prefix)
 		_stricmp((char *)prefix, ".END.") == HP41_OK) {
 		compile_end(code, global_count);
 
-		/* set .END. flag */
-		global_end = HP41_TRUE;
+		// We want to compile whole code /* set .END. flag */
+		//global_end = HP41_TRUE;
 		return(3);
 	}
 
@@ -866,16 +929,51 @@ int compile_arg3(unsigned char *code, unsigned char *prefix, unsigned char *ind,
 	return(0);
 }
 
-int compile_label(unsigned char *code, unsigned char *label, unsigned char *alpha, unsigned char *key)
-{
-	int asn, count;
 
-	asn = get_key(key);
+void compile_global(unsigned char *code) {
+	int last_rel = produced - last_global_lbl;
+	if (last_global_lbl == 0) last_rel = 0;
+	printf("compile_global: last_global=%i last_rel=%i\n",last_global_lbl, last_rel);
+	code[0] = 0xC0 + 2*(last_rel % 7);
+	code[1] = 0x00 + last_rel / 7;
+	last_global_lbl = produced;
+}
+
+
+int compile_global_end(unsigned char *code) {
+	if ( produced >= 3 && (code[produced-3] & 0xF0) == 0xC0 ) {
+		// Remove last END
+		produced -= 3;
+		int global_rel = ( ((code[produced] & 0xF)>>1) + 7*code[produced+1] );
+		last_global_lbl = produced - global_rel;
+		if (global_rel == 0) last_global_lbl = 0;
+		printf("Return to last global %04x global_rel = %i\n", last_global_lbl, global_rel);
+	}
+
+	// Align to register boundary
+	int offset = produced + 2;
+	offset = offset - offset%7 + 4;
+	for( ; produced < offset ; produced++)
+		code[produced] = 0;
+	compile_global(code+produced);
+	code[produced+2] = 0x2F; // global end
+	produced+=3;
+
+	return produced;
+}
+
+
+int compile_label(unsigned char *code, unsigned char *label, unsigned char *alpha, int asn)
+{
+	int count;
+
+	printf("LBL '%s' : at %04x to last %04x(at %i)\n",
+		alpha, produced, produced - last_global_lbl, last_global_lbl);
+
 	count = strlen((char *)alpha);
-	if (asn && count && count < MAX_ALPHA &&
+	if (count && count < MAX_ALPHA &&
 		_stricmp((char *)label, "LBL") == HP41_OK) {
-		code[0] = 0xC0;
-		code[1] = 0x00;
+		compile_global(code);
 		code[2] = 0xF1 + count;
 		code[3] = asn;
 		memcpy(&code[4], alpha, count);
@@ -883,19 +981,20 @@ int compile_label(unsigned char *code, unsigned char *label, unsigned char *alph
 	}
 
 	if (count >= MAX_ALPHA)
-		printf("Error: alpha (global) postfix[ %s \"%s\" %s ] too long.\n",
-		label, alpha, key);
+		printf("Error: alpha (global) postfix[ %s \"%s\" %i ] too long.\n",
+		label, alpha, asn);
 	else
-		printf("Error: invalid key assignment[ %s \"%s\" %s ]\n",
-		label, alpha, key);
+		printf("Error: invalid key assignment[ %s \"%s\" %i ]\n",
+		label, alpha, asn);
 
 	return(0);
 }
 
+
 void compile_end(unsigned char *buffer, int bytes)
 {
+#if 0
 	int a, bc;
-
 	/* */
 	/* END: [ Ca bc xx ] */
 	/* where: a = 0..D, bc = 00..FF */
@@ -924,7 +1023,12 @@ void compile_end(unsigned char *buffer, int bytes)
 	buffer[0] = 0xC0 + a;
 	buffer[1] = bc;
 	buffer[2] = 0x0D;
+#endif
+	printf("END : at %04x to last %04x\n", produced, produced - last_global_lbl);
+	compile_global(buffer); // fills two bytes
+	buffer[2] = 0x09;
 }
+
 
 int is_postfix(unsigned char *postfix, int *pindex)
 {
@@ -1176,8 +1280,8 @@ int is_local_label(char *alpha)
 int get_key(unsigned char *key)
 {
 	long rc;
-	int row, col, shift;
-	char *pkey, *stop;
+	int row, col, shift = 0;
+	char *pkey;
 	unsigned char lbuffer[MAX_LINE];
 
 	strcpy((char *)lbuffer, (char *)key);
@@ -1185,12 +1289,10 @@ int get_key(unsigned char *key)
 		*pkey++ = '\0';
 		if (*lbuffer == '\0' ||
 			_stricmp((char *)lbuffer, "Key") == HP41_OK) {
-			rc = strtol((char *)pkey, &stop, 10);
+			rc = strtol((char *)pkey, NULL, 10);
 
 			/* shift key? */
-			if (rc >= 0)
-				shift = 0;
-			else {
+			if (rc < 0) {
 				shift = 8;
 				rc = -rc;
 			}
@@ -1204,7 +1306,7 @@ int get_key(unsigned char *key)
 				col = rc - row * 10;
 				if (row >= 1 && row <= 8 &&
 					col >= 1 && col <= 5 &&
-					(row <= 3 || col < 5) &&
+					(row <= 4 || col < 5) &&
 					(row != 3 || col != 1)) {
 					return(((col - 1) << 4) + row + shift);
 				}
@@ -1225,7 +1327,8 @@ char get_xdigit(unsigned char xdigit)
 
 int compile_args(unsigned char *code_buffer,
 	int line_argc,
-	unsigned char *line_argv[])
+	unsigned char *line_argv[],
+	char * line)
 {
 	int base, size, count;
 	unsigned char lbuffer[MAX_LINE];
@@ -1281,8 +1384,10 @@ int compile_args(unsigned char *code_buffer,
 				count = compile_text(code_buffer, text_buffer, size);
 			}
 			else if (get_alpha_postfix(text_buffer, line_argv[base + 1])) {
+				char *t = strstr(line, "Key:");
+				int asn = (t == NULL ) ? 0 : get_key((unsigned char*)t);
 				count = compile_alpha(code_buffer, line_argv[base + 0],
-					text_buffer);
+					text_buffer, asn);
 			}
 			else {
 				count = compile_arg2(code_buffer, line_argv[base + 0],
@@ -1293,7 +1398,7 @@ int compile_args(unsigned char *code_buffer,
 	else if (line_argc == 3) {
 		if (get_alpha_postfix(text_buffer, line_argv[base + 1])) {
 			count = compile_label(code_buffer, line_argv[base + 0],
-				text_buffer, line_argv[base + 2]);
+				text_buffer, get_key(line_argv[base + 2]));
 		}
 		else {
 			count = compile_arg3(code_buffer, line_argv[base + 0],
@@ -1307,7 +1412,7 @@ int compile_args(unsigned char *code_buffer,
 
 		if (get_alpha_postfix(text_buffer, line_argv[base + 1])) {
 			count = compile_label(code_buffer, line_argv[base + 0],
-				text_buffer, lbuffer);
+				text_buffer, get_key(lbuffer));
 		}
 	}
 

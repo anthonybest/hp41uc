@@ -20,11 +20,12 @@ MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 GNU General Public License for more details.
 
 You should have received a copy of the GNU General Public License
-along with HP41UC.  If not, see <http://www.gnu.org/licenses/>.
+aLong with HP41UC.  If not, see <http://www.gnu.org/licenses/>.
 */
 
 #include "hp41uc.h"
 #define DAT_ASCII_HEADER_SIZE   4
+
 
 void convert(char *infile, FILE_DESC *pin, char *outfile, FILE_DESC *pout, char *name)
 {
@@ -34,10 +35,10 @@ void convert(char *infile, FILE_DESC *pin, char *outfile, FILE_DESC *pout, char 
 	int clone_input = HP41_FALSE;
 	char pname[11];
 	char p41name[11];
-	long inlength;
-	long outlength = 0;
+	Long inlength;
+	Long outlength = 0;
 	int files;
-	long dirblks, startblk;
+	Long dirblks, startblk;
 	FILE *fin, *fout = NULL;
 	FIND_FILE findfile;
 
@@ -203,8 +204,8 @@ p41dump_exit:
 
 void lifdump(char *infile, char *name)
 {
-	long dirblks;
-	long inlength;
+	Long dirblks;
+	Long inlength;
 	int files;
 	FILE *fin;
 	FIND_FILE liffile;
@@ -241,16 +242,16 @@ lifdump_exit:
 }
 
 void copy_file(FILE *fout, char *outpath,
-	FILE_TYPE outftype, long *poutlength,
-	char *pname, int files, long inlength,
+	FILE_TYPE outftype, Long *poutlength,
+	char *pname, int files, Long inlength,
 	FILE *fin, char *inpath, DATA_TYPE indtype)
 {
 	unsigned char *puc;
 	unsigned char chksum;
-	long lsize, dirblk;
+	Long lsize, dirblk;
 	/* copy_file() may be called multiple times for the same LIF output file */
-	static long startblk;
-	static long dirpos;
+	static Long startblk;
+	static Long dirpos;
 
 	/* write program blocks */
 	if (outftype == FILE_RAW) {
@@ -262,7 +263,7 @@ void copy_file(FILE *fout, char *outpath,
 			if (!raw_checksum ||
 				write_raw_checksum(fout, outpath, poutlength,
 				buf1_256, 256, chksum)) {
-				printf(" size[ %04X ]  ( %ld bytes )\n",
+				printf(" size[ %04X ]  ( %d bytes )\n",
 					(unsigned short)lsize, lsize);
 			}
 		}
@@ -279,7 +280,7 @@ void copy_file(FILE *fout, char *outpath,
 			chksum += puc[0] + puc[1];
 			if (write_raw_checksum(fout, outpath, poutlength,
 				buf1_256, 128, chksum)) {
-				printf(" size[ %04X ]  ( %ld bytes )\n",
+				printf(" size[ %04X ]  ( %d bytes )\n",
 					(unsigned short)lsize, lsize);
 			}
 		}
@@ -341,7 +342,7 @@ void copy_file(FILE *fout, char *outpath,
 			chksum += puc[0] + puc[1];
 			if (write_dat_checksum(fout, outpath,
 				poutlength, chksum)) {
-				printf(" size[ %04X ]  ( %ld bytes )\n",
+				printf(" size[ %04X ]  ( %d bytes )\n",
 					(unsigned short)lsize, lsize);
 			}
 		}
@@ -358,10 +359,10 @@ void copy_file(FILE *fout, char *outpath,
 }
 
 int copy_blocks(FILE *fout, char *outpath,
-	DATA_TYPE outdtype, long *poutlength,
-	long *psize, unsigned char *pchksum, long *pstartblk,
+	DATA_TYPE outdtype, Long *poutlength,
+	Long *psize, unsigned char *pchksum, Long *pstartblk,
 	FILE *fin, char *inpath,
-	DATA_TYPE indtype, long inlength)
+	DATA_TYPE indtype, Long inlength)
 {
 	if (indtype == DATA_RAW) {
 		return(copy_raw_blocks(fout, outpath, outdtype, poutlength,
@@ -381,14 +382,14 @@ int copy_blocks(FILE *fout, char *outpath,
 }
 
 int copy_raw_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
-	long *poutlength, long *psize,
-	unsigned char *pchksum, long *pstartblk,
-	FILE *fin, char *inpath, long inlength)
+	Long *poutlength, Long *psize,
+	unsigned char *pchksum, Long *pstartblk,
+	FILE *fin, char *inpath, Long inlength)
 {
 	size_t blkcnt, incnt;
 	size_t inblk, outblk;
 	size_t  i, j, k;
-	long size;
+	Long size;
 	int pending, end;
 	unsigned char *inbuf;
 
@@ -421,8 +422,9 @@ int copy_raw_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 			printf("Error reading from[ %s ]\n", inpath);
 		}
 		else {
-			/* check for END in block */
-			outblk = seek_end(buf1_256, inblk);
+			// We really want whole program, not just part to the first end /* check for END in block */
+			// outblk = seek_end(buf1_256, inblk);
+			outblk = inblk;
 			if (outblk) {
 				/* adjust program size */
 				size += outblk - inlength;
@@ -498,16 +500,16 @@ int copy_raw_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 }
 
 int copy_dat_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
-	long *poutlength, long *psize,
-	unsigned char *pchksum, long *pstartblk,
-	FILE *fin, char *inpath, long inlength)
+	Long *poutlength, Long *psize,
+	unsigned char *pchksum, Long *pstartblk,
+	FILE *fin, char *inpath, Long inlength)
 {
 	size_t blkcnt, incnt;
 	size_t inblk, outblk;
 	size_t remain;
 	size_t i, j, k;
-	long size;
-	long seekpos;
+	Long size;
+	Long seekpos;
 	int pending, end;
 	unsigned char *inbuf;
 	unsigned char *datbuf;
@@ -553,7 +555,7 @@ int copy_dat_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 
 					/* point past LF in the input file */
 					fseek(fin, seekpos, SEEK_SET);
-					printf(" Warning: Skipped Line-Feed (0x0A) character at offset[ %ld ]\n", seekpos - 1);
+					printf(" Warning: Skipped Line-Feed (0x0A) character at offset[ %d ]\n", seekpos - 1);
 				}
 				else {
 					seekpos += remain;
@@ -635,15 +637,15 @@ int copy_dat_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 }
 
 int copy_txt_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
-	long *poutlength, long *psize,
-	unsigned char *pchksum, long *pstartblk,
-	FILE *fin, char *inpath, long inlength)
+	Long *poutlength, Long *psize,
+	unsigned char *pchksum, Long *pstartblk,
+	FILE *fin, char *inpath, Long inlength)
 {
-	long blkcnt;
+	Long blkcnt;
 	size_t incnt;
 	size_t inblk, outblk;
 	size_t i, j, k;
-	long size;
+	Long size;
 	int pending;
 	COMPILE_FLAG flag;
 	int dist, max;
@@ -670,8 +672,12 @@ int copy_txt_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 	compile_init();
 	for (i = 0, max = 0; i < (size_t)blkcnt && !max && inblk && inlength; ++i) {
 		/* less than a full block? */
-		if (inlength < sizeof(buf_1024))
+		if (inlength < sizeof(buf_1024)) {
 			inblk = (size_t)inlength;
+		} else {
+			fprintf(stderr, "Code doesn't fit in buffer of %i bytes. Recompile code with bigger buffer.\n",(int)sizeof(buf_1024));
+			exit(1);
+		}
 
 		/* read block */
 		if (fread(buf_1024, 1, inblk, fin) != inblk) {
@@ -682,6 +688,7 @@ int copy_txt_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 			inlength -= inblk;
 			inbuf = buf_1024;
 			incnt = inblk;
+			inbuf[inblk] = 0; // Terminating char
 			do {
 				/* compile block */
 				outblk = compile(buf1_256, sizeof(buf1_256),
@@ -788,11 +795,11 @@ int copy_txt_blocks(FILE *fout, char *outpath, DATA_TYPE outdtype,
 	return(inblk && size);
 }
 
-long write_raw_checksum(FILE *fout, char *outpath, long *poutlength,
-	unsigned char *buffer, long bufsize,
+Long write_raw_checksum(FILE *fout, char *outpath, Long *poutlength,
+	unsigned char *buffer, Long bufsize,
 	unsigned char chksum)
 {
-	long n, r;
+	Long n, r;
 
 	/* get remaining bytes in block */
 	n = *poutlength;
@@ -813,12 +820,12 @@ long write_raw_checksum(FILE *fout, char *outpath, long *poutlength,
 	return(n);
 }
 
-long write_dat_checksum(FILE *fout, char *outpath,
-	long *poutlength,
+Long write_dat_checksum(FILE *fout, char *outpath,
+	Long *poutlength,
 	unsigned char chksum)
 {
 	unsigned char buffer2[2];
-	long n;
+	Long n;
 
 	/* copy checksum */
 	hextoascii(buffer2, &chksum, 1);
@@ -834,7 +841,7 @@ long write_dat_checksum(FILE *fout, char *outpath,
 	return(n);
 }
 
-long write_raw_size(FILE *fout, long size)
+Long write_raw_size(FILE *fout, Long size)
 {
 	unsigned char buffer2[2];
 	unsigned char *puc;
@@ -846,7 +853,7 @@ long write_raw_size(FILE *fout, long size)
 	return(fwrite(buffer2, 1, 2, fout));
 }
 
-long write_dat_size(FILE *fout, long size)
+Long write_dat_size(FILE *fout, Long size)
 {
 	unsigned char buffer4[4];
 	unsigned char buffer2[2];
@@ -860,12 +867,12 @@ long write_dat_size(FILE *fout, long size)
 	return(fwrite(buffer4, 1, 4, fout));
 }
 
-void dump_lif_dir(FILE *fin, char *inpath, long count, char *name)
+void dump_lif_dir(FILE *fin, char *inpath, Long count, char *name)
 {
 	unsigned char dir[sizeof(lifdir)];
 	unsigned short *pus;
 	char pname[11];
-	long entries;
+	Long entries;
 	int i;
 
 	/* get search name ( if any ) */
@@ -919,20 +926,20 @@ void dump_lif_dir(FILE *fin, char *inpath, long count, char *name)
 		printf("No match found for name[ %s ], in file [ %s ]\n", pname, inpath);
 	}
 	else if (entries) {
-		printf("%ld directory entries found.\n", entries);
+		printf("%d directory entries found.\n", entries);
 	}
 }
 
-void show_lif_info(char *name, long size)
+void show_lif_info(char *name, Long size)
 {
 	if (name)
 		printf(" name[ %s ]\n", name);
 	printf(" type[ E080 ]\n");
-	printf(" size[ %04X ]  ( %ld bytes )\n", (unsigned short)size, size);
+	printf(" size[ %04X ]  ( %d bytes )\n", (unsigned short)size, size);
 	printf(" implementation[ %04X0020 ]\n", (unsigned short)size);
 }
 
-long read_bin_size(FILE *fin, char *inpath, long length)
+Long read_bin_size(FILE *fin, char *inpath, Long length)
 {
 	unsigned char buffer2[2];
 
@@ -946,7 +953,7 @@ long read_bin_size(FILE *fin, char *inpath, long length)
 	return(get_lif_size(buffer2, length));
 }
 
-long read_dat_size(FILE *fin, char *inpath, long length)
+Long read_dat_size(FILE *fin, char *inpath, Long length)
 {
 	unsigned char buffer4[4];
 	unsigned char buffer2[2];
@@ -973,7 +980,7 @@ long read_dat_size(FILE *fin, char *inpath, long length)
 	return(get_lif_size(buffer2, length / 2) * 2);
 }
 
-long read_p41_dir(FILE *fin, char *inpath, long length, char *name)
+Long read_p41_dir(FILE *fin, char *inpath, Long length, char *name)
 {
 	unsigned char dir[sizeof(lifdir)];
 	unsigned short *pus;
@@ -1010,13 +1017,13 @@ long read_p41_dir(FILE *fin, char *inpath, long length, char *name)
 	return(get_lif_size(&dir[28], length));
 }
 
-long read_lif_dir(FILE *fin, char *inpath, long *plength, char *name,
-	long dirblks)
+Long read_lif_dir(FILE *fin, char *inpath, Long *plength, char *name,
+	Long dirblks)
 {
 	unsigned char *puc, *plif;
 	unsigned short *pus;
-	long length, size;
-	long startblk;
+	Long length, size;
+	Long startblk;
 	int i, match;
 
 	match = 0;
@@ -1057,7 +1064,7 @@ long read_lif_dir(FILE *fin, char *inpath, long *plength, char *name,
 							/* minimum file size */
 							length = startblk * 256 + size;
 							if (*plength < length) {
-								printf("Error: input file too short: expected[ %ld+ ], found[ %ld ] bytes\n",
+								printf("Error: input file too short: expected[ %d+ ], found[ %d ] bytes\n",
 									length, *plength);
 								size = 0;
 							}
@@ -1090,14 +1097,18 @@ long read_lif_dir(FILE *fin, char *inpath, long *plength, char *name,
 	return(0);
 }
 
-long read_lif_hdr(FILE *fin, char *inpath, long size)
+
+Long read_lif_hdr(FILE *fin, char *inpath, Long size)
 {
 	unsigned char buffer4[4];
 	unsigned char *puc;
 	unsigned short *pus;
-	long *pul;
-	long dirblks = 0;
+	Long *pul;
+	Long dirblks = 0;
 	int i;
+
+	printf("sizeof(Long)=%i\n",(int)sizeof(Long));
+	printf("sizeof(int)=%i\n",(int)sizeof(int));
 
 	/* fill buffer with NULL for error checking */
 	memset(buf2_256, 0, sizeof(buf2_256));
@@ -1106,7 +1117,7 @@ long read_lif_hdr(FILE *fin, char *inpath, long size)
 		printf("Error reading LIF header from[ %s ]\n", inpath);
 	}
 	else if (size <= 768) {
-		printf("Error: input file too short: expected[ 769+ ], found[ %ld ]\n", size);
+		printf("Error: input file too short: expected[ 769+ ], found[ %d ]\n", size);
 	}
 	else if (*(pus = (unsigned short *)&buf1_256[0]) != 0x0080) {
 		puc = (unsigned char *)pus;
@@ -1116,7 +1127,7 @@ long read_lif_hdr(FILE *fin, char *inpath, long size)
 		else
 			printf("1 ]: expected[ 00 ], found[ %02X ]\n", puc[1]);
 	}
-	else if (*(pul = (long *)&buf1_256[8]) != 0x02000000) {
+	else if (*(pul = (Long *)&buf1_256[8]) != 0x02000000) {
 		puc = (unsigned char *)pul;
 		printf("Error: invalid directory start block at offset[ ");
 		if (puc[0] != 0x00)
@@ -1156,7 +1167,7 @@ long read_lif_hdr(FILE *fin, char *inpath, long size)
 		for (i = 42; i < 256 && buf1_256[i] == 0; ++i);
 		printf("Error: invalid filler at offset[ %d ]: expected[ 00 ], found[ %02X ]\n", i, buf1_256[i]);
 	}
-	else if ((dirblks = *(long *)&buf1_256[16]) == 0x00) {
+	else if ((dirblks = *(Long *)&buf1_256[16]) == 0x00) {
 		printf("Error: LIF header has 0 directory blocks at offset[ 16..19 ]\n");
 	}
 	else if (fread(buf1_256, 1, 256, fin) != 256) {
@@ -1175,10 +1186,10 @@ long read_lif_hdr(FILE *fin, char *inpath, long size)
 	return(dirblks);
 }
 
-long get_lif_size(unsigned char *buffer2, long length)
+Long get_lif_size(unsigned char *buffer2, Long length)
 {
 	unsigned char *puc;
-	long size;
+	Long size;
 
 	/* get program size */
 	puc = (unsigned char *)&size;
@@ -1230,9 +1241,9 @@ int is_lif_name(char *lifname, char *name)
 	return(j == 0 && (i == 10 || lifname[i] == 0x20));
 }
 
-long write_lif_hdr(FILE *fout, long *pstartblk, long *pdirpos, int files)
+Long write_lif_hdr(FILE *fout, Long *pstartblk, Long *pdirpos, int files)
 {
-	long length, startblk;
+	Long length, startblk;
 	int blk, i;
 
 	/* init header ( padded with 0x00 ) */
@@ -1264,11 +1275,11 @@ long write_lif_hdr(FILE *fout, long *pstartblk, long *pdirpos, int files)
 	return(length);
 }
 
-long write_lif_dir(FILE *fout, char *name, long startblk, long size)
+Long write_lif_dir(FILE *fout, char *name, Long startblk, Long size)
 {
 	unsigned char dir[sizeof(lifdir)];
 	unsigned char *puc;
-	long blk;
+	Long blk;
 	int i;
 
 	/* init directory */

@@ -57,12 +57,12 @@ void barcode(char *infile, char *outfile, char *title)
 	FILE *fout = NULL;
 	FIND_FILE rawfile;
 	unsigned char *in_buffer, *out_buffer;
-	int in_count, out_count, out_size;
+	int in_count, out_count = 0, out_size = 0;
 	int start_line, end_line;
 	int trail_count, lead_count;
 	int previous_trail_count = 0;
-	int previous_start_line;
-	int previous_end_line;
+	int previous_start_line = 0;
+	int previous_end_line = 0;
 	int checksum;
 	int row = 1;
 	DECODE_FLAG flag;
@@ -367,14 +367,14 @@ void barcode(char *infile, char *outfile, char *title)
 				/* go back and edit #registers */
 				fseek(fout, prog_pos, SEEK_SET);
 				if (bc_printer == PRINTER_POSTCRIPT) {
-					fprintf(fout, "Program Registers Needed: %ld", reg);
+					fprintf(fout, "Program Registers Needed: %d", reg);
 				}
 				else if (bc_printer == PRINTER_HP) {
-					fprintf(fout, "%sProgram Registers Needed: %ld",
+					fprintf(fout, "%sProgram Registers Needed: %d",
 						pcl_left_margin, reg);
 				}
 				else { /* PRINTER_NONE */
-					fprintf(fout, "Program Registers Needed: %ld", reg);
+					fprintf(fout, "Program Registers Needed: %d", reg);
 				}
 
 				/* go back and edit page# */
@@ -385,9 +385,9 @@ void barcode(char *infile, char *outfile, char *title)
 					}
 				}
 
-				printf(" Program Size[ %04lX ]  ( %ld bytes )\n",
+				printf(" Program Size[ %04X ]  ( %d bytes )\n",
 					outlength, outlength);
-				printf(" Program Registers Needed: %ld\n", reg);
+				printf(" Program Registers Needed: %d\n", reg);
 			}
 		}
 	}

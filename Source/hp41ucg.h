@@ -38,15 +38,17 @@ int line_numbers = HP41_FALSE;
 int text_append = HP41_FALSE;
 int force_global = HP41_FALSE;
 int skip_line_feed = HP41_FALSE;
-int raw_checksum = HP41_TRUE;
+int raw_checksum = HP41_FALSE;
 
 char ascii[80];
 unsigned char buf1_16[16];
 unsigned char buf2_16[16];
-unsigned char buf1_256[256];
-unsigned char buf2_256[256];
-unsigned char buf_512[512];
-unsigned char buf_1024[1024];
+
+#define BUF_SIZE (1024*16)
+unsigned char buf1_256[BUF_SIZE];
+unsigned char buf2_256[BUF_SIZE];
+unsigned char buf_512[BUF_SIZE];
+unsigned char buf_1024[BUF_SIZE];
 
 /* output descriptors */
 FILE_DESC bin = {
@@ -526,13 +528,33 @@ INTERNAL_XROM internal_xrom_table[] = {
 	{"TIME", 26, 28 },
 	{"XYZALM", 26, 29 },
 
-	/* -CX TIME */
-	{ "-CX TIME", 26, MAX_XROM_FUNCTIONS + 1},
-	{"CLALMA", 26, 31 },
-	{"CLALMX", 26, 32 },
-	{"CLRALMS", 26, 33 },
-	{"RCLALM", 26, 34 },
-	{"SWPT", 26, 35 },
+	/*  -CXX TIME */
+	{ " -CXX TIME", 26, MAX_XROM_FUNCTIONS + 1 },
+	{ "CLALMA", 26, 31 },
+	{ "CLALMX", 26, 32 },
+	{ "CLRALMS", 26, 33 },
+	{ "RCLALM", 26, 34 },
+	{ "SWPT", 26, 35 },
+	{ "TRNG", 26, 36 },
+
+	/*  -DM 41X- */
+	{ " -DM 41X-", 26, MAX_XROM_FUNCTIONS + 2 },
+	{ "ABSP", 26, 38 },
+	{ "AINT", 26, 39 },
+	{ "ASWAP", 26, 40 },
+	{ "CLAC", 26, 41 },
+	{ "CLEM", 26, 42 },
+	{ "FAST", 26, 43 },
+	{ "FILL", 26, 44 },
+	{ "FLCOPY", 26, 45 },
+	{ "FLHD", 26, 46 },
+	{ "FLTYPE", 26, 47 },
+	{ "LKAOFF", 26, 48 },
+	{ "LKAON", 26, 49 },
+	{ "RENMFL", 26, 50 },
+	{ "RETPFL", 26, 51 },
+	{ "SLOW", 26, 52 },
+	{ "WORKFL", 26, 53 },
 
 	/* -WAND 1F */
 	{ "-WAND 1F", 27, MAX_XROM_FUNCTIONS },

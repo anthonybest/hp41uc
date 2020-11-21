@@ -405,7 +405,7 @@ int decompile(unsigned char *pout_buffer, int out_size,
 			if (c < 0xF0) {
 				if (copy_prefix((char *)prefixEND, out_size)) {
 					state = APPEND_CR;
-					end = 1;
+					//end = 1; // We really want to decompile everything
 				}
 				else {
 					done = HP41_TRUE;

@@ -39,16 +39,17 @@ typedef enum {
 
 int compile_args(unsigned char *code_buffer,
 	int line_argc,
-	unsigned char *line_argv[]);
+	unsigned char *line_argv[],
+	char * line);
 
 int compile_num(unsigned char *code, unsigned char *num);
 int compile_text(unsigned char *code, unsigned char *text, int count);
-int compile_alpha(unsigned char *code, unsigned char *prefix, unsigned char *alpha);
+int compile_alpha(unsigned char *code, unsigned char *prefix, unsigned char *alpha, int key_code);
 int compile_xrom(char *function, unsigned char *code_buffer, int *codes);
 int compile_arg1(unsigned char *code, unsigned char *prefix);
 int compile_arg2(unsigned char *code, unsigned char *prefix, unsigned char *postfix);
 int compile_arg3(unsigned char *code, unsigned char *prefix, unsigned char *pind, unsigned char *postfix);
-int compile_label(unsigned char *code, unsigned char *label, unsigned char *alpha, unsigned char *key);
+int compile_label(unsigned char *code, unsigned char *label, unsigned char *alpha, int asn);
 
 int get_numeric_prefix(unsigned char *numeric, unsigned char *buffer);
 

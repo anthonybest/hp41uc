@@ -51,6 +51,11 @@ along with HP41UC.  If not, see <http://www.gnu.org/licenses/>.
 #include <conio.h>
 #endif
 
+#include <stdint.h>
+#define Long int
+#define long int
+//#define Long uint32_t
+
 #define HP41_TRUE	(1)
 #define HP41_FALSE	(0)
 #define HP41_ERROR	(-1)
@@ -279,20 +284,20 @@ long read_dat_size(FILE *fin, char *inpath, long length);
 
 long read_p41_dir(FILE *fin, char *inpath, long length, char *name);
 
-long read_lif_dir(FILE *fin, char *inpath, long *plength, char *name,
-	long dirblks);
+Long read_lif_dir(FILE *fin, char *inpath, Long *plength, char *name,
+	Long dirblks);
 
-long read_lif_hdr(FILE *fin, char *inpath, long size);
+Long read_lif_hdr(FILE *fin, char *inpath, Long size);
 
-long get_lif_size(unsigned char *buffer2, long length);
+Long get_lif_size(unsigned char *buffer2, Long length);
 
 void get_lif_name(char *pname, char *name, char *filename);
 
 int is_lif_name(char *lifname, char *name);
 
-long write_lif_hdr(FILE *fout, long *pstartblk, long *pdirpos, int files);
+Long write_lif_hdr(FILE *fout, Long *pstartblk, Long *pdirpos, int files);
 
-long write_lif_dir(FILE *fout, char *name, long startblk, long size);
+Long write_lif_dir(FILE *fout, char *name, Long startblk, Long size);
 
 void copy_file(FILE *fout, char *outpath,
 	FILE_TYPE outftype, long *poutlength,
@@ -359,10 +364,12 @@ extern int force_global;
 extern char ascii[80];
 extern unsigned char buf1_16[16];
 extern unsigned char buf2_16[16];
-extern unsigned char buf1_256[256];
-extern unsigned char buf2_256[256];
-extern unsigned char buf_512[512];
-extern unsigned char buf_1024[1024];
+
+#define BUF_SIZE (1024*16)
+extern unsigned char buf1_256[BUF_SIZE];
+extern unsigned char buf2_256[BUF_SIZE];
+extern unsigned char buf_512[BUF_SIZE];
+extern unsigned char buf_1024[BUF_SIZE];
 
 /* 32-byte LIF header */
 extern unsigned char lifhdr[32];
